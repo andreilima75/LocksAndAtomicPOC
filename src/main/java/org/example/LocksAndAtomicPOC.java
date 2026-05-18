@@ -11,6 +11,7 @@ public class LocksAndAtomicPOC {
         int incrementsPerThread = 100_000;
 
         testCounter(new UnsafeCounter(), numThreads, incrementsPerThread, "Unsafe Counter");
+        testCounter(new SyncCounter(), numThreads, incrementsPerThread, "Synchronized Counter");
 
     }
 
@@ -24,6 +25,7 @@ public class LocksAndAtomicPOC {
             executor.submit(() -> {
                 for (int j = 0; j < increments; j++) {
                     if (counter instanceof UnsafeCounter u) u.increment();
+                    else if (counter instanceof SyncCounter s) s.increment();
                 }
             });
         }
@@ -35,6 +37,7 @@ public class LocksAndAtomicPOC {
 
         int finalCount = 0;
         if (counter instanceof UnsafeCounter u) finalCount = u.getCount();
+        else if (counter instanceof SyncCounter s) finalCount = s.getCount();
 
         long expected = (long) numThreads * increments;
 
@@ -50,6 +53,18 @@ public class LocksAndAtomicPOC {
         private int count = 0;
 
         public void increment() {
+            count++;
+        }
+
+        public int getCount() {
+            return count;
+        }
+    }
+
+    static class SyncCounter {
+        private int count = 0;
+
+        public synchronized void increment() {
             count++;
         }
 
