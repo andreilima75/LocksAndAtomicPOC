@@ -3,6 +3,7 @@ package org.example;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class LocksAndAtomicPOC {
 
@@ -12,6 +13,7 @@ public class LocksAndAtomicPOC {
 
         testCounter(new UnsafeCounter(), numThreads, incrementsPerThread, "Unsafe Counter");
         testCounter(new SyncCounter(), numThreads, incrementsPerThread, "Synchronized Counter");
+        testCounter(new LockCounter(), numThreads, incrementsPerThread, "ReentrantLock Counter");
 
     }
 
@@ -26,6 +28,7 @@ public class LocksAndAtomicPOC {
                 for (int j = 0; j < increments; j++) {
                     if (counter instanceof UnsafeCounter u) u.increment();
                     else if (counter instanceof SyncCounter s) s.increment();
+                    else if (counter instanceof LockCounter l) l.increment();
                 }
             });
         }
@@ -38,6 +41,7 @@ public class LocksAndAtomicPOC {
         int finalCount = 0;
         if (counter instanceof UnsafeCounter u) finalCount = u.getCount();
         else if (counter instanceof SyncCounter s) finalCount = s.getCount();
+        else if (counter instanceof LockCounter l) finalCount = l.getCount();
 
         long expected = (long) numThreads * increments;
 
@@ -66,6 +70,24 @@ public class LocksAndAtomicPOC {
 
         public synchronized void increment() {
             count++;
+        }
+
+        public int getCount() {
+            return count;
+        }
+    }
+
+    static class LockCounter {
+        private int count = 0;
+        private final ReentrantLock lock = new ReentrantLock();
+
+        public void increment() {
+            lock.lock();
+            try {
+                count++;
+            } finally {
+                lock.unlock();
+            }
         }
 
         public int getCount() {
