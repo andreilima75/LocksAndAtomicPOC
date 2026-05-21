@@ -3,6 +3,7 @@ package org.example;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class LocksAndAtomicPOC {
@@ -14,6 +15,7 @@ public class LocksAndAtomicPOC {
         testCounter(new UnsafeCounter(), numThreads, incrementsPerThread, "Unsafe Counter");
         testCounter(new SyncCounter(), numThreads, incrementsPerThread, "Synchronized Counter");
         testCounter(new LockCounter(), numThreads, incrementsPerThread, "ReentrantLock Counter");
+        testCounter(new AtomicCounter(), numThreads, incrementsPerThread, "AtomicInteger Counter");
 
     }
 
@@ -29,6 +31,7 @@ public class LocksAndAtomicPOC {
                     if (counter instanceof UnsafeCounter u) u.increment();
                     else if (counter instanceof SyncCounter s) s.increment();
                     else if (counter instanceof LockCounter l) l.increment();
+                    else if (counter instanceof AtomicCounter a) a.increment();
                 }
             });
         }
@@ -42,6 +45,7 @@ public class LocksAndAtomicPOC {
         if (counter instanceof UnsafeCounter u) finalCount = u.getCount();
         else if (counter instanceof SyncCounter s) finalCount = s.getCount();
         else if (counter instanceof LockCounter l) finalCount = l.getCount();
+        else if (counter instanceof AtomicCounter a) finalCount = a.getCount();
 
         long expected = (long) numThreads * increments;
 
@@ -92,6 +96,18 @@ public class LocksAndAtomicPOC {
 
         public int getCount() {
             return count;
+        }
+    }
+
+    static class AtomicCounter {
+        private final AtomicInteger count = new AtomicInteger(0);
+
+        public void increment() {
+            count.incrementAndGet();
+        }
+
+        public int getCount() {
+            return count.get();
         }
     }
 }
